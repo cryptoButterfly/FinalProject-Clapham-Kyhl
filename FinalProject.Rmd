@@ -10,15 +10,26 @@ library(lubridate)
 Deaths <- read.csv("time_series_19-covid-Deaths.csv")
 DeathsLong <- Deaths %>%
   gather(key= "Date", value = "Deaths", 5:50) %>%
-  mutate(Date2 = str_split(Date,"X"),Date3 = Date2[2])
+  separate(col=Date,into=c("X","date"),sep=1) %>%
+  mutate(Date = mdy(date),uniqueID= paste0(Country.Region,Province.State,Date)) %>%
+  select(Province.State, Country.Region, Lat, Long, Date, Deaths,uniqueID)
 Confirmed <- read.csv("time_series_19-covid-Confirmed.csv")
 ConfirmedLong <- Confirmed %>%
-  gather(key= "Date", value = "Confirmed", 5:50) 
+  gather(key= "Date", value = "Confirmed", 5:50)%>%
+  separate(col=Date,into=c("X","date"),sep=1) %>%
+  mutate(Date = mdy(date),uniqueID= paste0(Country.Region,Province.State,Date)) %>%
+  select(Province.State, Country.Region, Lat, Long, Date, Confirmed,uniqueID)
 Recovered <- read.csv("time_series_19-covid-Recovered.csv")
 RecoveredLong <- Recovered %>%
-  gather(key= "Date", value = "Confirmed", 5:50) 
-
-
+  gather(key= "Date", value = "Recovered", 5:50)%>%
+  separate(col=Date,into=c("X","date"),sep=1) %>%
+  mutate(Date = mdy(date),uniqueID= paste0(Country.Region,Province.State,Date)) %>%
+  select(Province.State, Country.Region, Lat, Long, Date, Recovered,uniqueID)
+DeathsConf <- left_join(DeathsLong,ConfirmedLong,by="uniqueID")
+allThree <- left_join(DeathsConf,RecoveredLong,by="uniqueID")
+coronaStatus <- allThree %>%
+  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,
+         "Date" = Date.x,Deaths, Confirmed, Recovered)
 ```
 
 
