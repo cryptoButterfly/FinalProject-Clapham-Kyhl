@@ -3,15 +3,36 @@ library(readr)
 library(tidyverse)
 library(dplyr)
 library(stringr)
+library(lubridate)
+```
+#STATS ON CONFIRMED/DEATHS/RECOVERY
+```{r}
+Deaths <- read.csv("time_series_19-covid-Deaths.csv")
+DeathsLong <- Deaths %>%
+  gather(key= "Date", value = "Deaths", 5:50) %>%
+  mutate(Date2 = str_split(Date,"X"),Date3 = Date2[2])
+Confirmed <- read.csv("time_series_19-covid-Confirmed.csv")
+ConfirmedLong <- Confirmed %>%
+  gather(key= "Date", value = "Confirmed", 5:50) 
+Recovered <- read.csv("time_series_19-covid-Recovered.csv")
+RecoveredLong <- Recovered %>%
+  gather(key= "Date", value = "Confirmed", 5:50) 
 
-##is this data set too clean??
 
-read_csv(ncov)
+```
+
+
+#PUBLIC HYSTERIA 
+```{r}
+#don't have time component realy, so bring in other elements?
+
 tweets <- read_csv("ncov.csv")
 Engcorona <- tweets%>%
   filter(lang=="en") %>%
   select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
 Engcorona$text <- str_to_lower(Engcorona$text)
+
+##GET DATA CEMENTED
 
 #sentiment analysis
 #looking for keywords associated with different emotions
@@ -25,9 +46,6 @@ Engcorona$text <- str_to_lower(Engcorona$text)
 ##use to make a data set that counts the most popular words??
 ##combine w H1N1 data?
 ## combine w corona spread information? 
-glimpse(carSpeeds)
-
-which(Engcorona$retweet_count==max(Engcorona$retweet_count))
 
 ##compare to data sets with similar outbreaks!!!
 
