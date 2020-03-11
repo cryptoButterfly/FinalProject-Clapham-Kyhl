@@ -20,6 +20,7 @@ library(lubridate)
 library(shiny)
 library(twitteR)
 library(tidytext)
+library(textdata)
 ```
 
 
@@ -29,21 +30,36 @@ library(tidytext)
 ```{r}
 #don't have time component ready, so bring in other elements?
 
+# in write up, mention how we only chose english tweets
 tweets <- read_csv("ncov.csv")
-engCorona <- tweets%>%
+tweets%>%
   filter(lang=="en") %>%
   select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
-engCorona$stripped_text <- str_to_lower(engCorona$stripped_text)
-tweetText <- engCorona$stripped_text
-tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:")))
+
+tweets$stripped_text <- str_to_lower(tweets$stripped_text)
+tweetText <- tweets$stripped_text
+
+#tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\@|\\(|\\)|\\?|\\:"))) #keeping hashtag
+tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
+
 tweetTextList2 <- unlist(tweetTextList)
 wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
-wordsDataFrame <- wordsDF %>%
+
+wordsDF %>%
   drop_na()
-names(wordsDataFrame) <- "word"
-wordsDFNums <- wordsDataFrame %>%
+
+names(wordsDF) <- "word"
+wordsDF %>%
   group_by(word) %>%
-  summarize(number = n()) #%>%
+  summarize(count = n()) %>%
+  ungroup() 
+
+joyWordsMatch <- wordsDF %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+  
+  
+#%>%
   #select(word %in% c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
 
 #struck_by %in% struckKey
@@ -93,6 +109,7 @@ my_stop_words <- stop_words %>% select(-lexicon) %>%
 
 tweet_words_interesting <- tweet_words %>% anti_join(my_stop_words)
 
+
 tweet_words_interesting %>% group_by(word) %>% tally(sort=TRUE) %>% slice(1:25) %>% ggplot(aes(x = reorder(word, 
     n, function(n) -n), y = n)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 60, 
     hjust = 1)) + xlab("")
@@ -114,4 +131,60 @@ nrow(Matching)/nrow(distinctWords)
 
 ```
 
+```{r}
+library(tidytext)
+#get_sentiments("afinn")
+#get_sentiments("bing")
+#get_sentiments("nrc")
 
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+nrc_negative <- get_sentiments("nrc") %>% 
+  filter(sentiment == "negative")
+
+nrc_anger <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anger")
+
+nrc_positive <- get_sentiments("nrc") %>% 
+  filter(sentiment == "positive")
+
+nrc_anticipation <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anticipation")
+
+nrc_disgust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "disgust")
+
+nrc_fear <- get_sentiments("nrc") %>% 
+  filter(sentiment == "fear")
+
+nrc_sadness <- get_sentiments("nrc") %>% 
+  filter(sentiment == "sadness")
+
+nrc_surprise <- get_sentiments("nrc") %>% 
+  filter(sentiment == "surprise")
+
+nrc_trust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "trust")
+
+
+#tidy_books %>%
+  #filter(book == "Emma") %>%
+  #inner_join(nrc_joy) %>%
+  #count(word, sort = TRUE)
+
+
+
+#library(janeaustenr)
+#library(dplyr)
+#library(stringr)
+
+#tidy_books <- austen_books() %>%
+ # group_by(book) %>%
+  #mutate(linenumber = row_number(),
+   #      chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]", 
+    #                                             ignore_case = TRUE)))) %>%
+  #ungroup() %>%
+  #unnest_tokens(word, text)
+
+```
