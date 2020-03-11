@@ -28,20 +28,40 @@ RecoveredLong <- Recovered %>%
 DeathsConf <- left_join(DeathsLong,ConfirmedLong,by="uniqueID")
 allThree <- left_join(DeathsConf,RecoveredLong,by="uniqueID")
 coronaStatus <- allThree %>%
-  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,
-         "Date" = Date.x,Deaths, Confirmed, Recovered)
+  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,"Date" = Date.x,Deaths, Confirmed, Recovered)
+
+##SHINY
+
+
 ```
 
 
 #PUBLIC HYSTERIA 
 ```{r}
-#don't have time component realy, so bring in other elements?
+#don't have time component ready, so bring in other elements?
 
 tweets <- read_csv("ncov.csv")
 Engcorona <- tweets%>%
   filter(lang=="en") %>%
   select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
-Engcorona$text <- str_to_lower(Engcorona$text)
+Engcorona$stripped_text <- str_to_lower(Engcorona$stripped_text)
+tweetText <- Engcorona$stripped_text
+tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:")))
+tweetTextList2 <- unlist(tweetTextList)
+wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
+wordsDataFrame <- wordsDF %>%
+  drop_na()
+names(wordsDataFrame) <- "word"
+wordsDFNums <- wordsDataFrame %>%
+  group_by(word) %>%
+  summarize(number = n()) #%>%
+  #select(word %in% c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
+
+struck_by %in% struckKey
+
+  
+  #https://www.tidytextmining.com/sentiment.html
+
 
 ##GET DATA CEMENTED
 
