@@ -1,0 +1,117 @@
+---
+title: "PublicHysteria"
+runtime: shiny
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(shiny)
+library(twitteR)
+library(tidytext)
+```
+
+
+
+
+#PUBLIC HYSTERIA 
+```{r}
+#don't have time component ready, so bring in other elements?
+
+tweets <- read_csv("ncov.csv")
+engCorona <- tweets%>%
+  filter(lang=="en") %>%
+  select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
+engCorona$stripped_text <- str_to_lower(engCorona$stripped_text)
+tweetText <- engCorona$stripped_text
+tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:")))
+tweetTextList2 <- unlist(tweetTextList)
+wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
+wordsDataFrame <- wordsDF %>%
+  drop_na()
+names(wordsDataFrame) <- "word"
+wordsDFNums <- wordsDataFrame %>%
+  group_by(word) %>%
+  summarize(number = n()) #%>%
+  #select(word %in% c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
+
+#struck_by %in% struckKey
+
+  
+  #https://www.tidytextmining.com/sentiment.html
+
+
+##GET DATA CEMENTED
+
+#sentiment analysis
+#looking for keywords associated with different emotions
+#track how fear is evolving over time trends 
+#text mining (trump tweet analysis)
+##after parsing dates and time--tidytext
+
+##now strip the tweets. 
+#go to lowercase,
+
+##use to make a data set that counts the most popular words??
+##combine w H1N1 data?
+## combine w corona spread information? 
+
+##compare to data sets with similar outbreaks!!!
+
+#could have two tweet databases, gather them with type being CORONA or H1N1
+# add a new column specofying the illness type
+# compare timestamp of conception?? 
+
+## alter dataset to give updated cases by country every day!! 
+##might have to use lag function?
+```
+
+using the twitter function???
+
+```{r}
+
+consumer_key <- consumer_key_nt
+consumer_secret <- consumer_secret_nt
+access_token <- access_token_nt
+access_secret <- access_secret_nt
+
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+
+my_stop_words <- stop_words %>% select(-lexicon) %>% 
+  bind_rows(data.frame(word = c("https", "t.co", "rt", "amp","4yig9gzh5t","fyy2ceydhi","78","fakenews")))
+
+tweet_words_interesting <- tweet_words %>% anti_join(my_stop_words)
+
+tweet_words_interesting %>% group_by(word) %>% tally(sort=TRUE) %>% slice(1:25) %>% ggplot(aes(x = reorder(word, 
+    n, function(n) -n), y = n)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 60, 
+    hjust = 1)) + xlab("")
+    
+    
+splitList<- c((str_split(sentences,"\\.|\\'| ")))
+splitVector <- unlist(splitList)
+wordsinS <- str_to_lower(splitVector)
+
+wordDF <- as.data.frame(words, stringsAsFactors=FALSE) 
+wordsinSDF <- as.data.frame(wordsinS, stringsAsFactors=FALSE) 
+
+matches <- inner_join(wordDF,wordsinSDF,by=c("words"="wordsinS"))
+Matching <- distinct(matches)
+
+distinctWords <- distinct(wordsinSDF)
+
+nrow(Matching)/nrow(distinctWords)
+
+```
+
+
