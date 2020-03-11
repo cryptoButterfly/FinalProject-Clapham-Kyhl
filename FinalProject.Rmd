@@ -7,6 +7,9 @@ output:
     fig_width: 6
 ---
 ```{r}
+##NOTE THAT DATA IS CUMULATIVE 
+#ask katie about graph scales 
+#fluid Row
 library(readr)
 library(tidyverse)
 library(dplyr)
@@ -37,35 +40,150 @@ RecoveredLong <- Recovered %>%
 DeathsConf <- left_join(DeathsLong,ConfirmedLong,by="uniqueID")
 allThree <- left_join(DeathsConf,RecoveredLong,by="uniqueID")
 coronaStatus <- allThree %>%
-  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,"Date" = Date.x,Deaths, Confirmed, Recovered)
+  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,"Date" = Date.x,Deaths, Confirmed, Recovered) %>%
+  mutate(countryNameString = as.character(Country))
 
-##SHINY
+coronaCountries <- coronaStatus%>%
+  group_by(Country) %>%
+  summarize(DeathsMean=mean(Deaths)) %>%
+  mutate(countryNameString = as.character(Country))
+
+##SHINY for different case types
 inputPanel(
-  selectInput("x_1", label = "Cases:", 
+  selectInput("x_1", label = "Select Case Type:", 
              choices = c("Confirmed",
                          "Deaths",
-                         "Recovered")
-  ))
+                         "Recovered"),
+             selected = "Recovered"),
+  selectInput("x_country",label="Select Country:",
+              choices= c(unlist(coronaCountries$countryNameString),"All"),
+              selected = "All"),
+  radioButtons("x_scale", label="Scale By:", 
+               choices = c("World Count Confirmed","Country Count Confirmed", "No Fixed Scale"),
+               selected="World Count Confirmed")
+  )
   renderPlot({ #total on a day
   if (input$x_1 == "Confirmed") { 
-        ggplot(coronaStatus, aes_string(y = input$x_1, x=Date)) +
+    if (as.character(input$x_country) != "All"){
+            thisCountryData <- coronaStatus %>% 
+            filter(countryNameString==as.character(input$x_country)) %>%
+            group_by(Date) %>%
+            summarize(Confirmed = sum(Confirmed))
+            
+            graph <- ggplot(thisCountryData, aes_string(y = input$x_1, x="Date")) +
+            geom_col() +
+            ggtitle("Confirmed Cases up to Date") +
+            ylab("Confirmed Cases") 
+
+    
+            if(input$x_scale == "World Count Confirmed"){
+              newGraph <- graph + scale_y_continuous(limits=c(0,100000))
+            }
+            if(input$x_scale == "Country Count Confirmed"){
+              maxCount <- (max(thisCountryData$Confirmed) + 5)
+              newGraph <- graph + scale_y_continuous(limits = c(0,maxCount))
+            }
+            if(input$x_scale == "No Fixed Scale"){
+              newGraph <- graph
+            }
+        }
+    else{
+        newGraph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
         geom_col() +
-        ggtitle("Confirmed Cases by Date") +
-        ylab("Confirmed Cases")
+        ggtitle("Confirmed Cases up to Date") +
+        ylab("Confirmed Cases") 
+    }
       }
   if (input$x_1 == "Deaths") { 
-        ggplot(coronaStatus, aes_string(y = input$x_1, x=Date)) +
+    if (as.character(input$x_country) != "All"){
+            thisCountryData <- coronaStatus %>% 
+            filter(countryNameString==as.character(input$x_country)) %>%
+            group_by(Date) %>%
+            summarize(Deaths = sum(Deaths))
+            
+            graph <- ggplot(thisCountryData, aes_string(y = input$x_1, x="Date")) +
+            geom_col() +
+            ggtitle("Fatal Cases up to Date") +
+            ylab("Fatal Cases") 
+            
+            if(input$x_scale == "World Count Confirmed"){
+              newGraph <- graph + scale_y_continuous(limits=c(0,100000))
+            }
+            if(input$x_scale == "Country Count Confirmed"){
+              maxCount <- (max(thisCountryData$Confirmed) + 5)
+              newGraph <- graph + scale_y_continuous(limits = c(0,maxCount))
+            }
+            if(input$x_scale == "No Fixed Scale"){
+              newGraph <- graph
+            }
+        }
+    else{
+        newGraph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
         geom_col() +
-        ggtitle("Fatal Cases by Date") +
-        ylab("Fatal Cases")
+        ggtitle("Fatal Cases up to Date") +
+        ylab("Fatal Cases") 
+    }
       }
-  if (input$x_1 == "Recovered") { 
-        ggplot(coronaStatus, aes_string(y = input$x_1, x=Date)) +
+  else { 
+    if (as.character(input$x_country) != "All"){
+            thisCountryData <- coronaStatus %>% 
+            filter(countryNameString==as.character(input$x_country)) %>%
+            group_by(Date) %>%
+            summarize(Recovered = sum(Recovered))
+            
+            graph <- ggplot(thisCountryData, aes_string(y = input$x_1, x="Date")) +
+            geom_col() +
+            ggtitle("Recovered Cases up to Date") +
+            ylab("Recovered Cases") 
+            
+            if(input$x_scale == "World Count Confirmed"){
+              newGraph <- graph + scale_y_continuous(limits=c(0,100000))
+            }
+            if(input$x_scale == "Country Count Confirmed"){
+              maxCount <- (max(thisCountryData$Confirmed) + 5)
+              newGraph <- graph + scale_y_continuous(limits = c(0,maxCount))
+            }
+            if(input$x_scale == "No Fixed Scale"){
+              newGraph <- graph
+            }
+        }
+    else{
+        newGraph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
+        geom_col() +
+        ggtitle("Recovered Cases up to Date") +
+        ylab("Recovered Cases") 
+    }
+  }
+    newGraph
+})
+  
+        ggplot(coronaStatus, aes(y = Recovered, x=Date)) +
         geom_col() +
         ggtitle("Recovered Cases by Date") +
         ylab("Recovered Cases")
-      }
-})
+        
+        
+  ##SHINY for map 
+#fig = px.choropleth(s_lat_grp, locations="Country", locationmode='country names',
+                #    color="Cases", hover_name="Country", 
+                   # color_continuous_scale="Sunset", title='SARS 2003')
+#fig.update(layout_coloraxis_showscale=False)
+#fig.show()
+        
+  USC <- coronaStatus%>%
+filter(countryNameString=="US")%>%          
+    group_by(Date) %>%
+    summarize(confirmed = sum(Confirmed))
+  
+    USD <- coronaStatus%>%
+filter(countryNameString=="US")%>%          
+    group_by(Date) %>%
+    summarize(deaths = sum(Deaths))
+    
+    USR <- coronaStatus%>%
+filter(countryNameString=="US")%>%          
+    group_by(Date) %>%
+    summarize(rec = sum(Recovered))
 ```
 
 
@@ -88,7 +206,7 @@ names(wordsDataFrame) <- "word"
 wordsDFNums <- wordsDataFrame %>%
   group_by(word) %>%
   summarize(number = n()) #%>%
-  #select(word %in% c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
+  #select(word not-in c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
 
 #struck_by %in% struckKey
 
