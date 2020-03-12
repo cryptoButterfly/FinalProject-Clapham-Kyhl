@@ -45,8 +45,8 @@ tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\
 tweetTextList2 <- unlist(tweetTextList)
 wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
 
-wordsDF %>%
-  drop_na()
+#wordsDF %>%
+  #drop_na()
 
 names(wordsDF) <- "word"
 wordsDF %>%
@@ -54,9 +54,6 @@ wordsDF %>%
   summarize(count = n()) %>%
   ungroup() 
 
-joyWordsMatch <- wordsDF %>%
-  inner_join(nrc_joy) %>%
-  count(word, sort = TRUE)
   
   
 #%>%
@@ -95,47 +92,19 @@ joyWordsMatch <- wordsDF %>%
 
 using the twitter function???
 
-```{r}
 
-consumer_key <- consumer_key_nt
-consumer_secret <- consumer_secret_nt
-access_token <- access_token_nt
-access_secret <- access_secret_nt
-
-setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
-
-my_stop_words <- stop_words %>% select(-lexicon) %>% 
-  bind_rows(data.frame(word = c("https", "t.co", "rt", "amp","4yig9gzh5t","fyy2ceydhi","78","fakenews")))
-
-tweet_words_interesting <- tweet_words %>% anti_join(my_stop_words)
-
-
-tweet_words_interesting %>% group_by(word) %>% tally(sort=TRUE) %>% slice(1:25) %>% ggplot(aes(x = reorder(word, 
-    n, function(n) -n), y = n)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 60, 
-    hjust = 1)) + xlab("")
-    
-    
-splitList<- c((str_split(sentences,"\\.|\\'| ")))
-splitVector <- unlist(splitList)
-wordsinS <- str_to_lower(splitVector)
-
-wordDF <- as.data.frame(words, stringsAsFactors=FALSE) 
-wordsinSDF <- as.data.frame(wordsinS, stringsAsFactors=FALSE) 
-
-matches <- inner_join(wordDF,wordsinSDF,by=c("words"="wordsinS"))
-Matching <- distinct(matches)
-
-distinctWords <- distinct(wordsinSDF)
-
-nrow(Matching)/nrow(distinctWords)
-
-```
 
 ```{r}
 library(tidytext)
 #get_sentiments("afinn")
 #get_sentiments("bing")
 #get_sentiments("nrc")
+
+
+#bar graphs with text
+#attach to carleton account 
+#publish document when running
+
 
 nrc_joy <- get_sentiments("nrc") %>% 
   filter(sentiment == "joy")
@@ -167,6 +136,10 @@ nrc_surprise <- get_sentiments("nrc") %>%
 nrc_trust <- get_sentiments("nrc") %>% 
   filter(sentiment == "trust")
 
+joyWordsMatch <- wordsDF %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
 
 #tidy_books %>%
   #filter(book == "Emma") %>%
@@ -186,5 +159,41 @@ nrc_trust <- get_sentiments("nrc") %>%
     #                                             ignore_case = TRUE)))) %>%
   #ungroup() %>%
   #unnest_tokens(word, text)
+
+```
+
+
+```{r}
+consumer_key <- consumer_key_nt
+consumer_secret <- consumer_secret_nt
+access_token <- access_token_nt
+access_secret <- access_secret_nt
+
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+
+my_stop_words <- stop_words %>% select(-lexicon) %>% 
+  bind_rows(data.frame(word = c("https", "t.co", "rt", "amp","4yig9gzh5t","fyy2ceydhi","78","fakenews")))
+
+tweet_words_interesting <- tweet_words %>% anti_join(my_stop_words)
+
+
+tweet_words_interesting %>% group_by(word) %>% tally(sort=TRUE) %>% slice(1:25) %>% ggplot(aes(x = reorder(word, 
+    n, function(n) -n), y = n)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 60, 
+    hjust = 1)) + xlab("")
+    
+    
+splitList<- c((str_split(sentences,"\\.|\\'| ")))
+splitVector <- unlist(splitList)
+wordsinS <- str_to_lower(splitVector)
+
+wordDF <- as.data.frame(words, stringsAsFactors=FALSE) 
+wordsinSDF <- as.data.frame(wordsinS, stringsAsFactors=FALSE) 
+
+matches <- inner_join(wordDF,wordsinSDF,by=c("words"="wordsinS"))
+Matching <- distinct(matches)
+
+distinctWords <- distinct(wordsinSDF)
+
+nrow(Matching)/nrow(distinctWords)
 
 ```
