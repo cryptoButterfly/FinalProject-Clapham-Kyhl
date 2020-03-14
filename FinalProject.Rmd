@@ -6,7 +6,7 @@ output:
     fig_height: 3
     fig_width: 6
 ---
-```{r}
+```{r,message=FALSE,echo=FALSE}
 ##NOTE THAT DATA IS CUMULATIVE 
 #ask katie about graph scales 
 #fluid Row
@@ -18,7 +18,7 @@ library(lubridate)
 library(shiny)
 ```
 #STATS ON CONFIRMED/DEATHS/RECOVERY
-```{r}
+```{r,echo=FALSE}
 Deaths <- read.csv("time_series_19-covid-Deaths.csv")
 DeathsLong <- Deaths %>%
   gather(key= "Date", value = "Deaths", 5:50) %>%
@@ -49,33 +49,43 @@ coronaCountries <- coronaStatus%>%
   mutate(countryNameString = as.character(Country))
 
 ##SHINY for different case types
+```
+
+```{r,eval=FALSE,echo=FALSE}
+## fix confirmed cases
+## add scale for aLL cases
 inputPanel(
   selectInput("x_1", label = "Select Case Type:", 
              choices = c("Confirmed",
                          "Deaths",
                          "Recovered"),
-             selected = "Recovered"),
+             selected = "Confirmed"),
   selectInput("x_country",label="Select Country:",
-              choices= c(unlist(coronaCountries$countryNameString),"All"),
+              choices= c("All",unlist(coronaCountries$countryNameString)),
               selected = "All"),
   radioButtons("x_scale", label="Scale By:", 
                choices = c("World Count Confirmed","Country Count Confirmed", "No Fixed Scale"),
                selected="World Count Confirmed")
   )
+
   renderPlot({ #total on a day
   if (input$x_1 == "Confirmed") { 
     if (as.character(input$x_country) != "All"){
             thisCountryData <- coronaStatus %>% 
             filter(countryNameString==as.character(input$x_country)) %>%
+            drop_na(Confirmed) %>%
             group_by(Date) %>%
-            summarize(Confirmed = sum(Confirmed))
+            summarize(Conf = sum(Confirmed))
             
-            graph <- ggplot(thisCountryData, aes_string(y = input$x_1, x="Date")) +
-            geom_col() +
+            glimpse(thisCountryData)
+            print(length(thisCountryData$Conf))
+            print(length(thisCountryData$Date))
+            
+            graph <- ggplot() +
+            geom_col(thisCountryData,mapping=aes(y = Conf, x=Date)) +
             ggtitle("Confirmed Cases up to Date") +
             ylab("Confirmed Cases") 
-
-    
+            
             if(input$x_scale == "World Count Confirmed"){
               newGraph <- graph + scale_y_continuous(limits=c(0,100000))
             }
@@ -88,12 +98,18 @@ inputPanel(
             }
         }
     else{
-        newGraph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
+        graph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
         geom_col() +
         ggtitle("Confirmed Cases up to Date") +
         ylab("Confirmed Cases") 
+        if(input$x_scale != "No Fixed Scale"){
+          newGraph <- graph + scale_y_continuous(limits=c(0,100000))
+        }
+        else{
+          newGraph <- graph
+        }
     }
-      }
+  }
   if (input$x_1 == "Deaths") { 
     if (as.character(input$x_country) != "All"){
             thisCountryData <- coronaStatus %>% 
@@ -118,10 +134,16 @@ inputPanel(
             }
         }
     else{
-        newGraph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
+        graph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
         geom_col() +
         ggtitle("Fatal Cases up to Date") +
         ylab("Fatal Cases") 
+        if(input$x_scale != "No Fixed Scale"){
+          newGraph <- graph + scale_y_continuous(limits=c(0,100000))
+        }
+        else{
+          newGraph <- graph
+        }
     }
       }
   else { 
@@ -148,20 +170,22 @@ inputPanel(
             }
         }
     else{
-        newGraph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
+        graph <- ggplot(coronaStatus, aes_string(y = input$x_1, x="Date")) +
         geom_col() +
         ggtitle("Recovered Cases up to Date") +
         ylab("Recovered Cases") 
+        
+        if(input$x_scale != "No Fixed Scale"){
+          newGraph <- graph + scale_y_continuous(limits=c(0,100000))
+        }
+        else{
+          newGraph <- graph
+        }
     }
   }
     newGraph
 })
   
-        ggplot(coronaStatus, aes(y = Recovered, x=Date)) +
-        geom_col() +
-        ggtitle("Recovered Cases by Date") +
-        ylab("Recovered Cases")
-        
         
   ##SHINY for map 
 #fig = px.choropleth(s_lat_grp, locations="Country", locationmode='country names',
@@ -184,6 +208,70 @@ filter(countryNameString=="US")%>%
 filter(countryNameString=="US")%>%          
     group_by(Date) %>%
     summarize(rec = sum(Recovered))
+```
+
+```{r,echo=FALSE}
+fluidPage(
+  fluidRow( 
+    column(width = 4,   
+        wellPanel(
+          
+inputPanel(
+  selectInput("x_Case", label = "Select Case Type:", 
+             choices = c("Confirmed",
+                         "Deaths",
+                         "Recovered"),
+             selected = "Confirmed"),
+  selectInput("x_Country",label="Select Country:",
+              choices= c("All",unlist(coronaCountries$countryNameString)),
+              selected = "All"),
+  radioButtons("x_Scale", label="Scale By:", 
+               choices = c("World Count Confirmed","Country Count Confirmed", "No Fixed Scale"),
+               selected="World Count Confirmed")
+  )
+)),
+    column(width = 8, 
+             plotOutput("statsPlot")
+      )))
+
+
+output$statsPlot <- renderPlot({ #total on a day
+  Title <- paste("Number of",input$x_Case,"up to Date")
+  if(input$x_Country != "All"){
+      NEWDATA <- coronaStatus%>%
+        filter(countryNameString==input$x_Country)%>%
+        group_by(Date) %>%
+        summarize(Deaths = sum(Deaths),Confirmed = sum(Confirmed),Recovered=sum(Recovered))
+
+    Graph <- ggplot(NEWDATA, aes_string(x="Date",y=input$x_Case)) +
+           geom_col(fill="darkred") + 
+           ggtitle(Title)
+    if(input$x_Scale == "World Count Confirmed"){
+              newGraph <- Graph + scale_y_continuous(limits=c(0,100000))
+            }
+    if(input$x_Scale == "Country Count Confirmed"){
+              maxCount <- (max(NEWDATA$Confirmed) + 5)
+              newGraph <- Graph + scale_y_continuous(limits = c(0,maxCount))
+            }
+    if(input$x_Scale == "No Fixed Scale"){
+              newGraph <- Graph
+            }
+  }
+  else{
+    Graph <- ggplot(coronaStatus, aes_string(y = input$x_Case, x="Date")) +
+    geom_col(fill="darkred") +
+    ggtitle(Title) 
+        
+    if(input$x_Scale != "No Fixed Scale"){
+          newGraph <- Graph + scale_y_continuous(limits=c(0,100000))
+        }
+    else{
+         newGraph <- Graph
+        }
+  }
+  newGraph + 
+    theme(plot.title = element_text(hjust = 0.5)) 
+})
 ```
 
 
