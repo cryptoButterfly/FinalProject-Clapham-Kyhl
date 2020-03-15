@@ -14,7 +14,7 @@ library(stringr)
 library(lubridate)
 library(shiny)
 ```
-#STATS ON CONFIRMED/DEATHS/RECOVERY
+## Statistic on the spread of Corona Virus 
 ```{r,echo=FALSE}
 #initial corona cases data cleanup and manipulation
 
