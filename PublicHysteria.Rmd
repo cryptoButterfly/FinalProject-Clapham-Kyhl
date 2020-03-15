@@ -9,9 +9,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r}
 library(readr)
 library(tidyverse)
 library(dplyr)
@@ -28,7 +25,7 @@ library(gplots)
 
 
 #PUBLIC HYSTERIA 
-```{r}
+```{r, echo = FALSE, message = FALSE, include=FALSE}
 #don't have time component ready, so bring in other elements?
 
 # in write up, mention how we only chose english tweets
@@ -40,14 +37,12 @@ tweets%>%
 tweets$stripped_text <- str_to_lower(tweets$stripped_text)
 tweetText <- tweets$stripped_text
 
-#tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\@|\\(|\\)|\\?|\\:"))) #keeping hashtag
 tweetTextList <- c((str_split(tweetText,"\\.|\\'|\\ |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
 
 tweetTextList2 <- unlist(tweetTextList)
 wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
 
-#wordsDF %>%
-  #drop_na()
+
 
 names(wordsDF) <- "word"
 wordsDF <- wordsDF %>%
@@ -57,45 +52,13 @@ wordsDF <- wordsDF %>%
 
   
   
-#%>%
-  #select(word %in% c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
-
-#struck_by %in% struckKey
-
-  
-  #https://www.tidytextmining.com/sentiment.html
-
-
-##GET DATA CEMENTED
-
-#sentiment analysis
-#looking for keywords associated with different emotions
-#track how fear is evolving over time trends 
-#text mining (trump tweet analysis)
-##after parsing dates and time--tidytext
-
-##now strip the tweets. 
-#go to lowercase,
-
-##use to make a data set that counts the most popular words??
-##combine w H1N1 data?
-## combine w corona spread information? 
-
-##compare to data sets with similar outbreaks!!!
-
-#could have two tweet databases, gather them with type being CORONA or H1N1
-# add a new column specofying the illness type
-# compare timestamp of conception?? 
-
-## alter dataset to give updated cases by country every day!! 
-##might have to use lag function?
 ```
 
 using the twitter function???
 
 
 
-```{r}
+```{r, echo =FALSE}
 library(tidytext)
 #get_sentiments("afinn")
 #get_sentiments("bing")
@@ -105,6 +68,8 @@ library(tidytext)
 #bar graphs with text
 #attach to carleton account 
 #publish document when running
+
+
 
 
 #grabbing the coded words from the nrc sentiments package
@@ -147,8 +112,6 @@ nrc_sentiments <- get_sentiments("nrc")
 WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
   drop_na(sentiment)
   
-#joy, negative, anger, positive, anticipation, disgust, fear, sadness, surprise, trust
-
 joyWordsMatch <- WordsMatch %>%
   filter(sentiment == "joy") %>%
   arrange(desc(count)) %>%
@@ -199,157 +162,179 @@ trustWordsMatch <- WordsMatch %>%
   arrange(desc(count)) %>%
   slice(1:10)
 
-#facet wrapping
-#joy, negative, anger, positive, anticipation, disgust, fear, sadness, surprise, trust
+#here is the shiny part
+inputPanel(
+  selectInput("x_sent", label = "Select Sentiment:", 
+             choices = c("joy", "negative", "anger", "positive", "anticipation", "disgust", "fear", "sadness", "surprise", "trust"),
+             selected = "fear")
+)
+ 
+renderPlot ({
+  if(input$x_sent == "joy")
+  {
+    sentPlot <- ggplot(joyWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Joy") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  
+  if(input$x_sent == "negative")
+  {
+    sentPlot <- ggplot(negativeWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words with Negative Connotation") +
+      geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "anger")
+  {
+    sentPlot <- ggplot(angerWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Anger") + 
+      geom_col() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
 
+  if(input$x_sent == "positive")
+  {
+    sentPlot <- ggplot(positiveWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words with Positive Connotation") + 
+      geom_col() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "anticipation")
+  {
+    sentPlot <- ggplot(anticipationWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Anticipation") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+ 
+  
+  if(input$x_sent == "disgust")
+  {
+    sentPlot <- ggplot(disgustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Disgust") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+ 
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
 
-ggplot(joyWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Joy") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(negativeWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Negative") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(angerWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Anger") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(positiveWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Positive") +  geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(anticipationWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Anticipation") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(disgustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Disgust") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(fearWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Fear") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(sadnessWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Sadness") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(surpriseWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Surprise") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
-
-ggplot(trustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Trust") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + theme(legend.position = "none") + labs(x=NULL, y="Count", )
-
-
-#tidy_books %>%
-  #filter(book == "Emma") %>%
-  #inner_join(nrc_joy) %>%
-  #count(word, sort = TRUE)
-
-
-
-#library(janeaustenr)
-#library(dplyr)
-#library(stringr)
-
-#tidy_books <- austen_books() %>%
- # group_by(book) %>%
-  #mutate(linenumber = row_number(),
-   #      chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]", 
-    #                                             ignore_case = TRUE)))) %>%
-  #ungroup() %>%
-  #unnest_tokens(word, text)
-
+  
+  if(input$x_sent == "fear")
+  {
+    sentPlot <- ggplot(fearWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Fear") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "sadness")
+  {
+    sentPlot <- ggplot(sadnessWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Sadness") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "surprise")
+  {
+    sentPlot <- ggplot(surpriseWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Surprise") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+ 
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  
+  if(input$x_sent == "trust")
+  {
+    sentPlot <- ggplot(trustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Trust") + 
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  sentPlot
+})
 ```
 
-Now for the venn diagrams
-```{r}
-library("grid")
 
-require(VennDiagram)
-
-AA <- c("hi","foo", "bar","yep","woo","hoo")
-BB <- c("baa","yep", "woo","yes")
-CC <- c("yes","foo","hi","woo", "huh")
-
-x <- list(AA=AA , BB=BB , CC=CC)
+```{r, echo=FALSE}
+mostPopSent <- WordsMatch %>% 
+  group_by(sentiment) %>%
+  summarize(number = sum(count))
 
 
-v0 <- venn( x, filename=NULL, 
-                    fill = c("red", "blue", "green"),
-                    alpha = 0.50,
-                    col = "transparent")
 
-grid.draw(v0)
-
-overlaps <- calculate.overlap(x)
-
-# extract indexes of overlaps from list names
-indx <- as.numeric(substr(names(overlaps),2,2))
+inputPanel(
+  radioButtons("x_totG", label="Select graph type: ", 
+               choices = c("Pie Chart","Bar Chart"),
+               selected="Bar Chart")
+            )
 
 
-# labels start at position 7 in the list for Venn's with 3 circles
-for (i in 1:length(overlaps)){
-  v0[[6 + indx[i] ]]$label <- paste(overlaps[[i]], collapse = "\n") 
-}
-
-
-grid.newpage()
-grid.draw(v0)
+renderPlot({
+ if(input$x_totG == "Bar Chart")
+  {
+    totPlot <- ggplot(mostPopSent, aes(x=reorder(sentiment,-number), y = number, fill = sentiment)) +
+      geom_col() +
+      labs(title = "Most Common Sentiments on the Twittersphere") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  
+#need to adjust legend to be in ascending order  
+  
+  if(input$x_totG == "Pie Chart")
+  {
+    totPlot <- ggplot(mostPopSent, aes(x="", y = number, fill = sentiment)) +
+      geom_bar(stat="identity", width=1, color = "white")+
+      coord_polar("y", start =0) +
+      labs(title = "Most Common Sentiments on the Twittersphere") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+totPlot
+})
+  
 ```
 
-```{r}
-oneName <- function() paste(sample(LETTERS,5,replace=TRUE),collapse="")
-geneNames <- replicate(1000, oneName())
-GroupA <- sample(geneNames, 400, replace=FALSE)
-GroupB <- sample(geneNames, 750, replace=FALSE)
-GroupC <- sample(geneNames, 250, replace=FALSE)
-GroupD <- sample(geneNames, 300, replace=FALSE)
-input  <-list(GroupA,GroupB,GroupC,GroupD)
-input
 
-tmp <- venn(input)
-attr(tmp, "intersections")
 
-GroupA.i <- which(geneNames %in% GroupA)
-GroupB.i <- which(geneNames %in% GroupB)
-GroupC.i <- which(geneNames %in% GroupC)
-GroupD.i <- which(geneNames %in% GroupD)
-input.i  <-list(A=GroupA.i,B=GroupB.i,C=GroupC.i,D=GroupD.i)
-input.i
 
-venn(input.i)
-GroupA.f <- geneNames %in% GroupA
-GroupB.f <- geneNames %in% GroupB
-GroupC.f <- geneNames %in% GroupC
-GroupD.f <- geneNames %in% GroupD
-input.df <- data.frame(A=GroupA.f,B=GroupB.f,C=GroupC.f,D=GroupD.f)
-head(input.df)
-venn(input.df)
-
-## smaller set to create empty groupings
-large <- input.df[1:20,]
-
-venn(large, simplify=FALSE) # with empty groupings
-venn(large, simplify=TRUE)  # without empty groupings
-
-## Capture group counts, but don't plot
-tmp <- venn(input, show.plot=FALSE)
-tmp
-
-## Show internal binary group labels
-venn(input, showSetLogicLabel=TRUE)
-
-## Limit  universe
-tmp <- venn(input, universe=geneNames[1:100])
-tmp
-
-##
-## Example to determine which elements are in A and B but not in
-## C and D using the 'intersections' attribute.
-##
-tmp <- venn(input, intersection=TRUE)
-isect <- attr(tmp, "intersection")
-
-# Look at all of the subsets
-str(isect)
-
-# Extract and combine the subsets of interest..
-AandB <- unique(c(isect$A, isect$B, isect$'A:B'))
-
-# and look at the results
-str(AandB)
-
-##
-## The full set of elements of each intersection is provided in the
-## "interesections" attribute.
-##
-a<-venn(list(1:5,3:8), show.plot=FALSE)
-intersections<-attr(a,"intersections")
-print(intersections)
-```
 
 
