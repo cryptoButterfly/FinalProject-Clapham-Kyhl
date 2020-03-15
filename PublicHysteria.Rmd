@@ -41,7 +41,7 @@ tweets$stripped_text <- str_to_lower(tweets$stripped_text)
 tweetText <- tweets$stripped_text
 
 #tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\@|\\(|\\)|\\?|\\:"))) #keeping hashtag
-tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
+tweetTextList <- c((str_split(tweetText,"\\.|\\'|\\ |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
 
 tweetTextList2 <- unlist(tweetTextList)
 wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
@@ -50,7 +50,7 @@ wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
   #drop_na()
 
 names(wordsDF) <- "word"
-wordsDF %>%
+wordsDF <- wordsDF %>%
   group_by(word) %>%
   summarize(count = n()) %>%
   ungroup() 
@@ -138,15 +138,20 @@ nrc_surprise <- get_sentiments("nrc") %>%
 nrc_trust <- get_sentiments("nrc") %>% 
   filter(sentiment == "trust")
 #matching them to the words from the tweets data frame
-joyWordsMatch <- wordsDF %>%
-  inner_join(nrc_joy) %>%
-  count(word, sort = TRUE)
-joyWordsMatch <- head(joyWordsMatch, 5)
 
 #bringing the top 5 words from each sentiment that matched to the words collected from the twitter data
 
+nrc_sentiments <- get_sentiments("nrc")
+
+#this figures out what are the most common coded words for the nrc sentiment data set
 WordsMatch <- wordsDF %>%
   inner_join(get_sentiments("nrc")) %>%
+  left_join(wordsDF, nrc_sentiments, by = c("word", "sentiment")) %>%
+  count(word, sort = TRUE) 
+  
+
+joyWordsMatch <- wordsDF %>%
+  inner_join(nrc_joy) %>%
   count(word, sort = TRUE)
 joyWordsMatch <- head(joyWordsMatch, 5)
 
