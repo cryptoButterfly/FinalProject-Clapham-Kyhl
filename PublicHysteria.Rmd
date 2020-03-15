@@ -144,77 +144,84 @@ nrc_trust <- get_sentiments("nrc") %>%
 nrc_sentiments <- get_sentiments("nrc")
 
 #this figures out what are the most common coded words for the nrc sentiment data set
-WordsMatch <- wordsDF %>%
-  inner_join(get_sentiments("nrc")) %>%
-  left_join(wordsDF, nrc_sentiments, by = c("word", "sentiment")) %>%
-  count(word, sort = TRUE) 
+WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
+  drop_na(sentiment)
   
+#joy, negative, anger, positive, anticipation, disgust, fear, sadness, surprise, trust
 
-joyWordsMatch <- wordsDF %>%
-  inner_join(nrc_joy) %>%
-  count(word, sort = TRUE)
-joyWordsMatch <- head(joyWordsMatch, 5)
+joyWordsMatch <- WordsMatch %>%
+  filter(sentiment == "joy") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
+negativeWordsMatch <- WordsMatch %>%
+  filter(sentiment == "negative") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-negativeWordsMatch <- wordsDF %>%
-  inner_join(nrc_negative) %>%
-  count(word, sort = TRUE)
-negativeWordsMatch <- head(negativeWordsMatch, 5)
+angerWordsMatch <- WordsMatch %>%
+    filter(sentiment == "anger") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-angerWordsMatch <- wordsDF %>%
-  inner_join(nrc_anger) %>%
-  count(word, sort = TRUE)
-angerWordsMatch <- head(angerWordsMatch, 5)
+positiveWordsMatch <- WordsMatch %>%
+  filter(sentiment == "positive") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-positiveWordsMatch <- wordsDF %>%
-  inner_join(nrc_positive) %>%
-  count(word, sort = TRUE)
-positiveWordsMatch <- head(positiveWordsMatch, 5)
+anticipationWordsMatch <- WordsMatch %>%
+   filter(sentiment == "anticipation") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-anticipationWordsMatch <- wordsDF %>%
-  inner_join(nrc_anticipation) %>%
-  count(word, sort = TRUE)
-anticipationWordsMatch <- head(anticipationWordsMatch, 5)
+disgustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "disgust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-disgustWordsMatch <- wordsDF %>%
-  inner_join(nrc_disgust) %>%
-  count(word, sort = TRUE)
-disgustWordsMatch <- head(disgustWordsMatch, 5)
+fearWordsMatch <- WordsMatch %>%
+  filter(sentiment == "fear") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-fearWordsMatch <- wordsDF %>%
-  inner_join(nrc_fear) %>%
-  count(word, sort = TRUE)
-fearWordsMatch <- head(fearWordsMatch, 5)
+sadnessWordsMatch <- WordsMatch %>%
+  filter(sentiment == "sadness") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-sadnessWordsMatch <- wordsDF %>%
-  inner_join(nrc_sadness) %>%
-  count(word, sort = TRUE)
-sadnessWordsMatch <- head(sadnessWordsMatch, 5)
+surpriseWordsMatch <- WordsMatch %>%
+  filter(sentiment == "surprise") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
-surpriseWordsMatch <- wordsDF %>%
-  inner_join(nrc_surprise) %>%
-  count(word, sort = TRUE)
-surpriseWordsMatch <- head(surpriseWordsMatch, 5)
-
-trustWordsMatch <- wordsDF %>%
-  inner_join(nrc_trust) %>%
-  count(word, sort = TRUE) 
-trustWordsMatch <- head(trustWordsMatch, 5)
+trustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "trust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
 
 #facet wrapping
 #joy, negative, anger, positive, anticipation, disgust, fear, sadness, surprise, trust
 
 
-ggplot(joyWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Joy") + geom_col()
-ggplot(negativeWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Negative") + geom_col()
-ggplot(angerWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Anger") + geom_col()
-ggplot(positiveWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Positive") + geom_col()
-ggplot(anticipationWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Anticipation") + geom_col()
-ggplot(disgustWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Disgust") + geom_col()
-ggplot(fearWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Fear") + geom_col()
-ggplot(sadnessWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Sadness") + geom_col()
-ggplot(surpriseWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Surprise") + geom_col()
-ggplot(trustWordsMatch, aes(x=word, y = n, fill= word)) +labs(title = "Trust") + geom_col()
+ggplot(joyWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Joy") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(negativeWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Negative") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(angerWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Anger") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(positiveWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Positive") +  geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(anticipationWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Anticipation") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(disgustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Disgust") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(fearWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Fear") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(sadnessWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Sadness") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(surpriseWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Surprise") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(trustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Trust") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + theme(legend.position = "none") + labs(x=NULL, y="Count", )
 
 
 #tidy_books %>%
