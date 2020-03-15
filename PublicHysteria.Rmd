@@ -21,6 +21,7 @@ library(shiny)
 library(twitteR)
 library(tidytext)
 library(textdata)
+library(gplots)
 ```
 
 
@@ -40,7 +41,7 @@ tweets$stripped_text <- str_to_lower(tweets$stripped_text)
 tweetText <- tweets$stripped_text
 
 #tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\@|\\(|\\)|\\?|\\:"))) #keeping hashtag
-tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
+tweetTextList <- c((str_split(tweetText,"\\.|\\'|\\ |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
 
 tweetTextList2 <- unlist(tweetTextList)
 wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
@@ -49,7 +50,7 @@ wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
   #drop_na()
 
 names(wordsDF) <- "word"
-wordsDF %>%
+wordsDF <- wordsDF %>%
   group_by(word) %>%
   summarize(count = n()) %>%
   ungroup() 
@@ -106,6 +107,7 @@ library(tidytext)
 #publish document when running
 
 
+#grabbing the coded words from the nrc sentiments package
 nrc_joy <- get_sentiments("nrc") %>% 
   filter(sentiment == "joy")
 
@@ -135,10 +137,91 @@ nrc_surprise <- get_sentiments("nrc") %>%
 
 nrc_trust <- get_sentiments("nrc") %>% 
   filter(sentiment == "trust")
+#matching them to the words from the tweets data frame
 
-joyWordsMatch <- wordsDF %>%
-  inner_join(nrc_joy) %>%
-  count(word, sort = TRUE)
+#bringing the top 5 words from each sentiment that matched to the words collected from the twitter data
+
+nrc_sentiments <- get_sentiments("nrc")
+
+#this figures out what are the most common coded words for the nrc sentiment data set
+WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
+  drop_na(sentiment)
+  
+#joy, negative, anger, positive, anticipation, disgust, fear, sadness, surprise, trust
+
+joyWordsMatch <- WordsMatch %>%
+  filter(sentiment == "joy") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+negativeWordsMatch <- WordsMatch %>%
+  filter(sentiment == "negative") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+angerWordsMatch <- WordsMatch %>%
+    filter(sentiment == "anger") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+positiveWordsMatch <- WordsMatch %>%
+  filter(sentiment == "positive") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+anticipationWordsMatch <- WordsMatch %>%
+   filter(sentiment == "anticipation") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+disgustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "disgust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+fearWordsMatch <- WordsMatch %>%
+  filter(sentiment == "fear") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+sadnessWordsMatch <- WordsMatch %>%
+  filter(sentiment == "sadness") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+surpriseWordsMatch <- WordsMatch %>%
+  filter(sentiment == "surprise") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+trustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "trust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+#facet wrapping
+#joy, negative, anger, positive, anticipation, disgust, fear, sadness, surprise, trust
+
+
+ggplot(joyWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Joy") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(negativeWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Negative") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(angerWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Anger") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(positiveWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Positive") +  geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(anticipationWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Anticipation") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(disgustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Disgust") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(fearWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Fear") + geom_col()  + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(sadnessWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Sadness") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(surpriseWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Surprise") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ theme(legend.position = "none")
+
+ggplot(trustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +labs(title = "Trust") + geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + theme(legend.position = "none") + labs(x=NULL, y="Count", )
 
 
 #tidy_books %>%
@@ -162,38 +245,111 @@ joyWordsMatch <- wordsDF %>%
 
 ```
 
+Now for the venn diagrams
+```{r}
+library("grid")
+
+require(VennDiagram)
+
+AA <- c("hi","foo", "bar","yep","woo","hoo")
+BB <- c("baa","yep", "woo","yes")
+CC <- c("yes","foo","hi","woo", "huh")
+
+x <- list(AA=AA , BB=BB , CC=CC)
+
+
+v0 <- venn( x, filename=NULL, 
+                    fill = c("red", "blue", "green"),
+                    alpha = 0.50,
+                    col = "transparent")
+
+grid.draw(v0)
+
+overlaps <- calculate.overlap(x)
+
+# extract indexes of overlaps from list names
+indx <- as.numeric(substr(names(overlaps),2,2))
+
+
+# labels start at position 7 in the list for Venn's with 3 circles
+for (i in 1:length(overlaps)){
+  v0[[6 + indx[i] ]]$label <- paste(overlaps[[i]], collapse = "\n") 
+}
+
+
+grid.newpage()
+grid.draw(v0)
+```
 
 ```{r}
-consumer_key <- consumer_key_nt
-consumer_secret <- consumer_secret_nt
-access_token <- access_token_nt
-access_secret <- access_secret_nt
+oneName <- function() paste(sample(LETTERS,5,replace=TRUE),collapse="")
+geneNames <- replicate(1000, oneName())
+GroupA <- sample(geneNames, 400, replace=FALSE)
+GroupB <- sample(geneNames, 750, replace=FALSE)
+GroupC <- sample(geneNames, 250, replace=FALSE)
+GroupD <- sample(geneNames, 300, replace=FALSE)
+input  <-list(GroupA,GroupB,GroupC,GroupD)
+input
 
-setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+tmp <- venn(input)
+attr(tmp, "intersections")
 
-my_stop_words <- stop_words %>% select(-lexicon) %>% 
-  bind_rows(data.frame(word = c("https", "t.co", "rt", "amp","4yig9gzh5t","fyy2ceydhi","78","fakenews")))
+GroupA.i <- which(geneNames %in% GroupA)
+GroupB.i <- which(geneNames %in% GroupB)
+GroupC.i <- which(geneNames %in% GroupC)
+GroupD.i <- which(geneNames %in% GroupD)
+input.i  <-list(A=GroupA.i,B=GroupB.i,C=GroupC.i,D=GroupD.i)
+input.i
 
-tweet_words_interesting <- tweet_words %>% anti_join(my_stop_words)
+venn(input.i)
+GroupA.f <- geneNames %in% GroupA
+GroupB.f <- geneNames %in% GroupB
+GroupC.f <- geneNames %in% GroupC
+GroupD.f <- geneNames %in% GroupD
+input.df <- data.frame(A=GroupA.f,B=GroupB.f,C=GroupC.f,D=GroupD.f)
+head(input.df)
+venn(input.df)
 
+## smaller set to create empty groupings
+large <- input.df[1:20,]
 
-tweet_words_interesting %>% group_by(word) %>% tally(sort=TRUE) %>% slice(1:25) %>% ggplot(aes(x = reorder(word, 
-    n, function(n) -n), y = n)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 60, 
-    hjust = 1)) + xlab("")
-    
-    
-splitList<- c((str_split(sentences,"\\.|\\'| ")))
-splitVector <- unlist(splitList)
-wordsinS <- str_to_lower(splitVector)
+venn(large, simplify=FALSE) # with empty groupings
+venn(large, simplify=TRUE)  # without empty groupings
 
-wordDF <- as.data.frame(words, stringsAsFactors=FALSE) 
-wordsinSDF <- as.data.frame(wordsinS, stringsAsFactors=FALSE) 
+## Capture group counts, but don't plot
+tmp <- venn(input, show.plot=FALSE)
+tmp
 
-matches <- inner_join(wordDF,wordsinSDF,by=c("words"="wordsinS"))
-Matching <- distinct(matches)
+## Show internal binary group labels
+venn(input, showSetLogicLabel=TRUE)
 
-distinctWords <- distinct(wordsinSDF)
+## Limit  universe
+tmp <- venn(input, universe=geneNames[1:100])
+tmp
 
-nrow(Matching)/nrow(distinctWords)
+##
+## Example to determine which elements are in A and B but not in
+## C and D using the 'intersections' attribute.
+##
+tmp <- venn(input, intersection=TRUE)
+isect <- attr(tmp, "intersection")
 
+# Look at all of the subsets
+str(isect)
+
+# Extract and combine the subsets of interest..
+AandB <- unique(c(isect$A, isect$B, isect$'A:B'))
+
+# and look at the results
+str(AandB)
+
+##
+## The full set of elements of each intersection is provided in the
+## "interesections" attribute.
+##
+a<-venn(list(1:5,3:8), show.plot=FALSE)
+intersections<-attr(a,"intersections")
+print(intersections)
 ```
+
+
