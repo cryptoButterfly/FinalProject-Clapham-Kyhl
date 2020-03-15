@@ -6,7 +6,7 @@ output:
     fig_height: 3
     fig_width: 6
 ---
-```{r}
+```{r setup,message=FALSE,echo=FALSE}
 library(readr)
 library(tidyverse)
 library(dplyr)
@@ -15,143 +15,165 @@ library(lubridate)
 library(shiny)
 ```
 #STATS ON CONFIRMED/DEATHS/RECOVERY
-```{r}
+```{r,echo=FALSE}
+#initial corona cases data cleanup and manipulation
+
+#import Deaths cases data, convert to long, create Date object and unique ID for place and time
 Deaths <- read.csv("time_series_19-covid-Deaths.csv")
 DeathsLong <- Deaths %>%
   gather(key= "Date", value = "Deaths", 5:50) %>%
   separate(col=Date,into=c("X","date"),sep=1) %>%
   mutate(Date = mdy(date),uniqueID= paste0(Country.Region,Province.State,Date)) %>%
   select(Province.State, Country.Region, Lat, Long, Date, Deaths,uniqueID)
+
+#import Confirmed cases data, convert to long, create Date object and unique ID for place and time
 Confirmed <- read.csv("time_series_19-covid-Confirmed.csv")
 ConfirmedLong <- Confirmed %>%
   gather(key= "Date", value = "Confirmed", 5:50)%>%
   separate(col=Date,into=c("X","date"),sep=1) %>%
   mutate(Date = mdy(date),uniqueID= paste0(Country.Region,Province.State,Date)) %>%
   select(Province.State, Country.Region, Lat, Long, Date, Confirmed,uniqueID)
+
+#import Recovered cases data, convert to long, create Date object and unique ID for place and time
 Recovered <- read.csv("time_series_19-covid-Recovered.csv")
 RecoveredLong <- Recovered %>%
   gather(key= "Date", value = "Recovered", 5:50)%>%
   separate(col=Date,into=c("X","date"),sep=1) %>%
   mutate(Date = mdy(date),uniqueID= paste0(Country.Region,Province.State,Date)) %>%
   select(Province.State, Country.Region, Lat, Long, Date, Recovered,uniqueID)
+
+#joining data by unique ID
 DeathsConf <- left_join(DeathsLong,ConfirmedLong,by="uniqueID")
 allThree <- left_join(DeathsConf,RecoveredLong,by="uniqueID")
 coronaStatus <- allThree %>%
-  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,"Date" = Date.x,Deaths, Confirmed, Recovered)
+  select("Country" = Country.Region.x, "Province/State" = Province.State.x, "Latitude" = Lat.x, "Longitude" = Long.x,"Date" = Date.x,Deaths, Confirmed, Recovered) %>%
+  mutate(countryNameString = as.character(Country))
 
-##SHINY
+#make country name a string object
+coronaCountries <- coronaStatus%>%
+  group_by(Country) %>%
+  summarize(DeathsMean=mean(Deaths)) %>%
+  mutate(countryNameString = as.character(Country))
+```
+
+
+
+```{r,echo=FALSE}
+#SHINY plot giving confirmed, recovered, deaths cases based on country and a user-input y scale
+
+#formatting
+fluidPage(
+  fluidRow( 
+    column(width = 4,   
+        wellPanel(
+#allow user to chose case type, country, and y axis scale         
 inputPanel(
-  selectInput("x_1", label = "Cases:", 
+  selectInput("x_Case", label = "Select Case Type:", 
              choices = c("Confirmed",
                          "Deaths",
-                         "Recovered")
-  ))
-  renderPlot({ #total on a day
-  if (input$x_1 == "Confirmed") { 
-        ggplot(coronaStatus, aes_string(y = input$x_1, x=Date)) +
-        geom_col() +
-        ggtitle("Confirmed Cases by Date") +
-        ylab("Confirmed Cases")
-      }
-  if (input$x_1 == "Deaths") { 
-        ggplot(coronaStatus, aes_string(y = input$x_1, x=Date)) +
-        geom_col() +
-        ggtitle("Fatal Cases by Date") +
-        ylab("Fatal Cases")
-      }
-  if (input$x_1 == "Recovered") { 
-        ggplot(coronaStatus, aes_string(y = input$x_1, x=Date)) +
-        geom_col() +
-        ggtitle("Recovered Cases by Date") +
-        ylab("Recovered Cases")
-      }
+                         "Recovered"),
+             selected = "Confirmed"),
+  selectInput("x_Country",label="Select Country:",
+              choices= c("All",unlist(coronaCountries$countryNameString)),
+              selected = "All"),
+  radioButtons("x_Scale", label="Scale By:", 
+               choices = c("World Count Confirmed","Country Count Confirmed", "No Fixed Scale"),
+               selected="World Count Confirmed")
+            )
+          )
+        ),
+    column(width = 8, 
+             plotOutput("statsPlot")
+      )
+    )
+  )
+
+#create plot
+output$statsPlot <- renderPlot({ #total on a day
+  #if user selects specific country, make new data set and generate plot
+  if(input$x_Country != "All"){
+      NEWDATA <- coronaStatus%>%
+        filter(countryNameString==input$x_Country)%>%
+        group_by(Date) %>%
+        summarize(Deaths = sum(Deaths),Confirmed = sum(Confirmed),Recovered=sum(Recovered))
+    Title2 <- paste("Number of",input$x_Case,"up to Date","in",input$x_Country)
+    Graph <- ggplot(NEWDATA, aes_string(x="Date",y=input$x_Case)) +
+           geom_col(fill="darkred") + 
+           ggtitle(Title2)
+    #scale of plot depends on the user input
+    if(input$x_Scale == "World Count Confirmed"){
+              newGraph <- Graph + scale_y_continuous(limits=c(0,100000))
+            }
+    if(input$x_Scale == "Country Count Confirmed"){
+              maxCount <- (max(NEWDATA$Confirmed) + 5)
+              newGraph <- Graph + scale_y_continuous(limits = c(0,maxCount))
+            }
+    if(input$x_Scale == "No Fixed Scale"){
+              newGraph <- Graph
+            }
+  }
+  #generates plot for all countries
+  else{
+    Title2 <- paste("Number of",input$x_Case,"up to Date","in World")
+    Graph <- ggplot(coronaStatus, aes_string(y = input$x_Case, x="Date")) +
+    geom_col(fill="darkred") +
+    ggtitle(Title2) 
+    #scale of plot depends on user input   
+    if(input$x_Scale != "No Fixed Scale"){
+          newGraph <- Graph + scale_y_continuous(limits=c(0,100000))
+        }
+    else{
+         newGraph <- Graph
+        }
+  }
+  newGraph + 
+    theme(plot.title = element_text(hjust = 0.5)) 
 })
 ```
 
 
-#PUBLIC HYSTERIA 
-```{r}
-#don't have time component ready, so bring in other elements?
+```{r,echo=FALSE}
+#make a world plot showing location, magnitude, spread of confirmed cases
 
-tweets <- read_csv("ncov.csv")
-Engcorona <- tweets%>%
-  filter(lang=="en") %>%
-  select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
-Engcorona$stripped_text <- str_to_lower(Engcorona$stripped_text)
-tweetText <- Engcorona$stripped_text
-tweetTextList <- c((str_split(tweetText,"\\.|\\'| |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:")))
-tweetTextList2 <- unlist(tweetTextList)
-wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
-wordsDataFrame <- wordsDF %>%
-  drop_na()
-names(wordsDataFrame) <- "word"
-wordsDFNums <- wordsDataFrame %>%
-  group_by(word) %>%
-  summarize(number = n()) #%>%
-  #select(word %in% c("the","to","in","of","and","is","this","a","of","for","be","on","than","that","so"))
+#make a data set to control the min and max of the plot legend
+coronaLegend <- coronaStatus %>%
+  filter(Confirmed != 0)
 
-#struck_by %in% struckKey
+fluidPage(
+  fluidRow( 
+    column(width = 4,   
+        wellPanel(
+#allow user to select date
+inputPanel(
+sliderInput("Day","Select Day", min = min(coronaStatus$Date),max = max(coronaStatus$Date),value = min(coronaStatus$Date), step = 1,ticks=TRUE)
+            #, animate=animationOptions(interval = 300, loop = TRUE))
+          )
+        )
+      ),
+   column(width = 8, height=5,
+             plotOutput("worldPlot")
+    )
+  )
+)
 
-  
-  #https://www.tidytextmining.com/sentiment.html
-
-
-##GET DATA CEMENTED
-
-#sentiment analysis
-#looking for keywords associated with different emotions
-#track how fear is evolving over time trends 
-#text mining (trump tweet analysis)
-##after parsing dates and time--tidytext
-
-##now strip the tweets. 
-#go to lowercase,
-
-##use to make a data set that counts the most popular words??
-##combine w H1N1 data?
-## combine w corona spread information? 
-
-##compare to data sets with similar outbreaks!!!
-
-#could have two tweet databases, gather them with type being CORONA or H1N1
-# add a new column specofying the illness type
-# compare timestamp of conception?? 
-
-## alter dataset to give updated cases by country every day!! 
-##might have to use lag function?
+output$worldPlot <- renderPlot({
+  print("RenderPlot")
+  glimpse(coronaStatus)
+  #create data set filtering data for day selected
+  thisDay <- coronaStatus%>%
+    mutate(stringDay = as.character(Date)) %>%
+    filter(stringDay==as.character(input$Day)) %>%
+    filter(Confirmed != 0)
+  #render plot
+  ggplot(thisDay, aes(x=Longitude, y=Latitude)) +
+    borders("world",ylim = c(-55, 95),xlim=c(-180,180)) +
+    geom_point(aes(size = Confirmed),color="red") +
+    scale_size(limits=c(min(coronaLegend$Confirmed),max(coronaStatus$Confirmed))) +
+    coord_quickmap()  +
+    xlab(label=NULL) + 
+    ylab(label=NULL) +
+    ggtitle("Confirmed Cases Worldwide") + 
+    theme(plot.title = element_text(hjust = 0.5)) 
+})
 ```
 
-using the twitter function???
-
-library(twitteR)
-
-consumer_key <- consumer_key_nt
-consumer_secret <- consumer_secret_nt
-access_token <- access_token_nt
-access_secret <- access_secret_nt
-
-setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
-
-my_stop_words <- stop_words %>% select(-lexicon) %>% 
-  bind_rows(data.frame(word = c("https", "t.co", "rt", "amp","4yig9gzh5t","fyy2ceydhi","78","fakenews")))
-
-tweet_words_interesting <- tweet_words %>% anti_join(my_stop_words)
-
-tweet_words_interesting %>% group_by(word) %>% tally(sort=TRUE) %>% slice(1:25) %>% ggplot(aes(x = reorder(word, 
-    n, function(n) -n), y = n)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 60, 
-    hjust = 1)) + xlab("")
-    
-    
-splitList<- c((str_split(sentences,"\\.|\\'| ")))
-splitVector <- unlist(splitList)
-wordsinS <- str_to_lower(splitVector)
-
-wordDF <- as.data.frame(words, stringsAsFactors=FALSE) 
-wordsinSDF <- as.data.frame(wordsinS, stringsAsFactors=FALSE) 
-
-matches <- inner_join(wordDF,wordsinSDF,by=c("words"="wordsinS"))
-Matching <- distinct(matches)
-
-distinctWords <- distinct(wordsinSDF)
-
-nrow(Matching)/nrow(distinctWords)
