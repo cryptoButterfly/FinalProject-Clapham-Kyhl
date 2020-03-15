@@ -1,11 +1,22 @@
 ---
-title: "final proj"
+title: "Corona Virus: *Impact and Response*"
 runtime: shiny
 output: 
   html_document:
     fig_height: 3
     fig_width: 6
 ---
+
+<style type="text/css">
+
+h1.title {
+  font-size: 38px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkRed;
+  text-align: center;
+}
+</style>
+
 ```{r setup,message=FALSE,echo=FALSE}
 library(readr)
 library(tidyverse)
@@ -14,8 +25,9 @@ library(stringr)
 library(lubridate)
 library(shiny)
 ```
+<br><br><br><br>
 
-## Statistic on the spread of Corona Virus 
+###Background statistics on spread of Corona Virus (COVID-19)
 ```{r,echo=FALSE}
 #initial corona cases data cleanup and manipulation
 
@@ -177,4 +189,7 @@ output$worldPlot <- renderPlot({
     theme(plot.title = element_text(hjust = 0.5)) 
 })
 ```
+
+## Public Response: an Analysis of Corona Virus Tweets over a Day
+
 
