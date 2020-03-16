@@ -1,12 +1,10 @@
 ---
-title: "Corona Virus: *Impact and Response*"
+title: "Coronavirus: *Impact and Response*"
 runtime: shiny
 output: 
   html_document:
     fig_height: 3
     fig_width: 6
-    toc: true
-    toc_float: true
 ---
 
 <style type="text/css">
@@ -36,10 +34,48 @@ library(twitteR)
 library(tidytext)
 library(textdata)
 library(gplots)
+library(RColorBrewer)
+library(viridis)
+library(knitr)
+library(DT)
 ```
-<br><br><br><br>
 
-###Background statistics on spread of Corona Virus (COVID-19)
+## {.tabset}
+
+### Questions and Methodology
+
+<br>
+
+<p style="text-align:center;"><img src="coronavirus.jpg" alt="Virus" width = "300" height = "200"></p>
+
+<br>
+
+The Coronavirus (COVID-19) is a respiratory disease first detected in Wuhan, China. Since initial reports of the virus in January 2020, the disease has spread to over 100 international locations—reaching every continent except Antarctica. It has led to thousands of deaths worldwide, and countries all over the world are taking measures to slow and prevent the spread of disease. As of March 11th, it has been declared a pandemic by the World Health Organization. Additional information about Coronavirus can be found on the Center for Disease Control's continuously updated <a href="https://www.cdc.gov/coronavirus/2019-ncov/cases-updates/summary.html?CDC_AA_refVal=https%3A%2F%2Fwww.cdc.gov%2Fcoronavirus%2F2019-ncov%2Fsummary.html">website</a>. 
+
+<br>
+
+This disease is directly impacting millions across the world, and understanding its origin, spread, and public perception is crucial in combatting and preparing for future outbreaks. Our goal with this website was two-fold-- to analyze the spread and impact of Coronavirus across individual countries, as well as to look at public response. In order to analyze the more direct case-based impact of the virus, we found and cleaned three different data sets coming from John Hopkins University. These data sets contained information on the number of cases, recoveries, and deaths from Coronavirus. It also contained information on the country, province, and date of the update. We used these sources to create a larger, all-intensive dataset to explore the following questions:  
+<ul>
+  <li>*To what extent do the number of fatalities and recoveries differ by country?*</li>
+  <li>*How does the scale of country-level outbreaks compare to the global scale?*</li>
+  <li>*How has the disease spread geographically?*</li>
+  <li>*How has the disease spread over time?*</li>
+</ul>
+
+<br>
+
+Public response to and perception of the virus also impacts procedures and attitudes around the world. To analyze the public's reactions, we obtained a day's worth of tweets about or related to the Coronavirus outbreak. We isolated individual words tweeted, found the most commonly used words, and performed sentiment analysis. This allowed us to evaluate public emotions surrounding the pandemic. We explored the following questions:
+<ul>
+  <li>*For each sentiment, what are the most commonly tweeted words?*</li>
+  <li>*What are the top words with positive connotations? Negative connotations?*</li>
+  <li>*Which sentiments are most prevalent on the Twittersphere?*</li>
+</ul>
+
+<br>
+
+<br>
+
+
 ```{r,echo=FALSE}
 #initial corona cases data cleanup and manipulation
 
@@ -81,7 +117,166 @@ coronaCountries <- coronaStatus%>%
   mutate(countryNameString = as.character(Country))
 ```
 
+```{r, echo = FALSE, message = FALSE, include=FALSE}
+#Data wrangling and clean up for the Twitter data set
+#read in tweets data frame and filter by tweets in english
+tweets <- read_csv("ncov.csv")
+tweetsEng <- tweets%>%
+  filter(lang=="en") %>%
+  select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
 
+#convert words to lowercase and separate individual words by symbols into a list
+tweets$stripped_text <- str_to_lower(tweets$stripped_text)
+tweetText <- tweets$stripped_text
+tweetTextList <- c((str_split(tweetText,"\\.|\\'|\\ |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
+
+#create a data frame of individual words
+tweetTextList2 <- unlist(tweetTextList)
+wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
+
+#find frequency of word usage
+names(wordsDF) <- "word"
+wordsDF <- wordsDF %>%
+  group_by(word) %>%
+  summarize(count = n()) %>%
+  ungroup() 
+```
+
+```{r, echo =FALSE}
+#Data wrangling of "nrc" sentiments data set
+#grabbing the words associated with each sentiment from the nrc sentiments package
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+nrc_negative <- get_sentiments("nrc") %>% 
+  filter(sentiment == "negative")
+
+nrc_anger <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anger")
+
+nrc_positive <- get_sentiments("nrc") %>% 
+  filter(sentiment == "positive")
+
+nrc_anticipation <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anticipation")
+
+nrc_disgust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "disgust")
+
+nrc_fear <- get_sentiments("nrc") %>% 
+  filter(sentiment == "fear")
+
+nrc_sadness <- get_sentiments("nrc") %>% 
+  filter(sentiment == "sadness")
+
+nrc_surprise <- get_sentiments("nrc") %>% 
+  filter(sentiment == "surprise")
+
+nrc_trust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "trust")
+```
+
+```{r,echo=FALSE}
+#bringing the top 5 words from each sentiment that matched to the words collected from the twitter data
+nrc_sentiments <- get_sentiments("nrc")
+
+#this code figures out what are the most common coded words for the nrc sentiment data set
+WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
+  drop_na(sentiment)
+
+#the following groups grab the top 10 most used words for each sentiment
+joyWordsMatch <- WordsMatch %>%
+  filter(sentiment == "joy") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+negativeWordsMatch <- WordsMatch %>%
+  filter(sentiment == "negative") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+angerWordsMatch <- WordsMatch %>%
+    filter(sentiment == "anger") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+positiveWordsMatch <- WordsMatch %>%
+  filter(sentiment == "positive") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+anticipationWordsMatch <- WordsMatch %>%
+   filter(sentiment == "anticipation") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+disgustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "disgust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+fearWordsMatch <- WordsMatch %>%
+  filter(sentiment == "fear") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+sadnessWordsMatch <- WordsMatch %>%
+  filter(sentiment == "sadness") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+surpriseWordsMatch <- WordsMatch %>%
+  filter(sentiment == "surprise") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+trustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "trust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+```
+
+
+
+### Data {.tabset .tabset-fade}
+
+#### Coronavirus Case Data
+
+<br>
+The following table contains the first 1000 rows of the Coronavirus outbreak cases, with each row conveying an updated status of confirmed, recovered, and fatal cases for a specific location and day. The days range from January 22, 2020 to March 7, 2020, and the data contains information on 225 distinct locations and 102 countries. The original data sets were taken obtained from Kaggle and originally sourced from Johns Hopkins University.
+
+<br><br>
+
+```{r,echo=FALSE}
+datatable(coronaStatus[1:1000,1:8])
+```
+<br><br>
+
+
+#### Twitter Sentiment Data 
+<br>
+
+The following table contains all words tweeted that have an emotional connotation, as defined by the sentiments dataset in tidytext. The tweets were obtained from Kaggle database. The tweets contained data from January 28, 2020-- the day that Japan, Taiwan, and Germany reported their first domestic transmission of Coronavirus. 2,466 tweeted English words were analyzed for emotions and frequency to get a better idea of the public's reaction in the relatively earlier phase of the Coronavirus global outbreak.The lexicon for sentiments used was "nrc" from Saif Mohammad and Peter Turney. 
+
+<br>
+
+```{r,echo=FALSE}
+datatable(WordsMatch)
+```
+<br><br>
+
+
+### Spread of Disease 
+
+<br>
+
+
+The two plots below convey information about the location, time, and type of Coronavirus cases. The first plot provides information on the number of confirmed, recovered, or fatal cases between March 7, 2020 and January 22, 2020 for a given country or worldwide. The second plot tracks the locations of confimed cases between these dates, simulating the spread of the virus.
+
+<br>
+
+***
 
 ```{r,echo=FALSE}
 #SHINY plot giving confirmed, recovered, deaths cases based on country and a user-input y scale
@@ -156,6 +351,16 @@ output$statsPlot <- renderPlot({ #total on a day
 })
 ```
 
+<br>
+
+This plot demonstrates that the vast proportion of world confirmed, recovered, and fatal cases occur in Mainland China. It also demonstrates a seemingly exponential increase in confirmed cases for most countries. This exponential increase in cases appears particularly apparent when looking at countries with more recent exposure to the disease, such as the United States, France, Greece, Iran, or other countries. Mainland China, on the other hand, has new confirmed cases increasing at a decreasing rate. However, when viewing cases on a global scale, case numbers in countries outside of Mainland China are dwarfed. Both fatal and recovered cases show similar trends in numbers, with recovered cases overwhelming those that are fatal. 
+
+
+<br>
+
+***
+
+<br>
 
 ```{r,echo=FALSE}
 #make a world plot showing location, magnitude, spread of confirmed cases
@@ -171,7 +376,6 @@ fluidPage(
 #allow user to select date
 inputPanel(
 sliderInput("Day","Select Day", min = min(coronaStatus$Date),max = max(coronaStatus$Date),value = min(coronaStatus$Date), step = 1,ticks=TRUE)
-            #, animate=animationOptions(interval = 300, loop = TRUE))
           )
         )
       ),
@@ -202,148 +406,47 @@ output$worldPlot <- renderPlot({
 })
 ```
 
-## Public Response: an Analysis of Corona Virus Tweets over a Day
+<br>
 
-```{r, echo = FALSE, message = FALSE, include=FALSE}
-#don't have time component ready, so bring in other elements?
+This plot demonstrates an extreme increase in cases over a relatively short time frame and across the world. At the start date of the data, there are relatively few cases outside Mainland China. However, by March 7th, the virus is present on every continent except Antarctica. Cases began reaching Europe (specifically in France) around January 24th, and quickly overwhelmed the region. Interestingly, the virus reached coasts of certain countries, such as the United States and Australia, before spreading inland. 
 
-# in write up, mention how we only chose english tweets
-tweets <- read_csv("ncov.csv")
-tweets%>%
-  filter(lang=="en") %>%
-  select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
+<br><br>
 
-tweets$stripped_text <- str_to_lower(tweets$stripped_text)
-tweetText <- tweets$stripped_text
+### Public Response
 
-tweetTextList <- c((str_split(tweetText,"\\.|\\'|\\ |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
+<br>
 
-tweetTextList2 <- unlist(tweetTextList)
-wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
+The following plots convey public response to the outbreak on Twitter. The first plot shows the most frequent words associated with a given emotion. This gives insight to the feelings about Coronavirus expressed by Twitter users on January 28, 2020. The second plot shows the most common emotions expressed in tweeted words. Note that these are just the English words with hashtags relating to Coronavirus on a particular day. 
+
+<br>
+
+***
 
 
 
-names(wordsDF) <- "word"
-wordsDF <- wordsDF %>%
-  group_by(word) %>%
-  summarize(count = n()) %>%
-  ungroup() 
-
-  
-  
-```
-
-
-
-
-```{r, echo =FALSE}
-
-
-#grabbing the words associated with each sentiment from the nrc sentiments package
-nrc_joy <- get_sentiments("nrc") %>% 
-  filter(sentiment == "joy")
-
-nrc_negative <- get_sentiments("nrc") %>% 
-  filter(sentiment == "negative")
-
-nrc_anger <- get_sentiments("nrc") %>% 
-  filter(sentiment == "anger")
-
-nrc_positive <- get_sentiments("nrc") %>% 
-  filter(sentiment == "positive")
-
-nrc_anticipation <- get_sentiments("nrc") %>% 
-  filter(sentiment == "anticipation")
-
-nrc_disgust <- get_sentiments("nrc") %>% 
-  filter(sentiment == "disgust")
-
-nrc_fear <- get_sentiments("nrc") %>% 
-  filter(sentiment == "fear")
-
-nrc_sadness <- get_sentiments("nrc") %>% 
-  filter(sentiment == "sadness")
-
-nrc_surprise <- get_sentiments("nrc") %>% 
-  filter(sentiment == "surprise")
-
-nrc_trust <- get_sentiments("nrc") %>% 
-  filter(sentiment == "trust")
-
-#matching them to the words from the tweets data frame
-```
-
-```{r,echo=FALSE}
-#bringing the top 5 words from each sentiment that matched to the words collected from the twitter data
-nrc_sentiments <- get_sentiments("nrc")
-
-#this code figures out what are the most common coded words for the nrc sentiment data set
-WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
-  drop_na(sentiment)
-
-#this grabs the top 10 most used words for each sentiment
-joyWordsMatch <- WordsMatch %>%
-  filter(sentiment == "joy") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-negativeWordsMatch <- WordsMatch %>%
-  filter(sentiment == "negative") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-angerWordsMatch <- WordsMatch %>%
-    filter(sentiment == "anger") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-positiveWordsMatch <- WordsMatch %>%
-  filter(sentiment == "positive") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-anticipationWordsMatch <- WordsMatch %>%
-   filter(sentiment == "anticipation") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-disgustWordsMatch <- WordsMatch %>%
-  filter(sentiment == "disgust") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-fearWordsMatch <- WordsMatch %>%
-  filter(sentiment == "fear") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-sadnessWordsMatch <- WordsMatch %>%
-  filter(sentiment == "sadness") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-surpriseWordsMatch <- WordsMatch %>%
-  filter(sentiment == "surprise") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-trustWordsMatch <- WordsMatch %>%
-  filter(sentiment == "trust") %>%
-  arrange(desc(count)) %>%
-  slice(1:10)
-
-```
-
-```{r,echo=FALSE}
+```{r fig.align = "center",echo=FALSE}
 #here is the shiny part, produces a bar graph where the user can choose which sentiment's top 10 words are
 
+#selecting which sentiment to be viewed
+fluidPage(
+  fluidRow( 
+    column(width = 4,   
+        wellPanel(
 inputPanel(
-  selectInput("x_sent", label = "Select Sentiment:", 
+  selectInput("x_sent", label = "Select Emotion:", 
              choices = c("joy", "negative", "anger", "positive", "anticipation", "disgust", "fear", "sadness", "surprise", "trust"),
              selected = "fear")
+          )
+        )
+      ),
+column(width = 8, 
+             plotOutput("sentPlot")
+    )
+  )
 )
- 
-renderPlot ({
+
+#outputs the bar graph for each sentiment 
+output$sentPlot <- renderPlot ({
   if(input$x_sent == "joy")
   {
     sentPlot <- ggplot(joyWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
@@ -463,29 +566,46 @@ renderPlot ({
 })
 ```
 
+<br>
+
+Of all the words from all sentiments, the most commonly tweeted word was "virus", which was associated with the negative sentiment. The most commonly tweeted word for positive sentiments was "share." However, while the word, "share" is typically associated with overall positive emotions, it is likely that this word is tweeted frequently in a different context related to the highly contagious nature of the virus.
+
+<br>
+
+***
+
+
 
 ```{r, echo=FALSE}
 
-#this gives the top 10 most popular sentiment
+#this dataframe gives the top 10 most popular sentiments
 mostPopSent <- WordsMatch %>% 
   group_by(sentiment) %>%
   summarize(number = sum(count))
 
-#this reorders in decreasing prevalency
+#this reorders the sentiments in decreasing prevalency
 mostPopSent$sentiment <- factor(mostPopSent$sentiment, levels = c("negative", "positive", "fear", "trust", "anticipation", "anger", "sadness", "disgust", "joy", "surprise"))
 
-
-
 #this is the shiny part to give the user the choice to view the top 10 most popular sentiments in bar graph or pie chart format
-
+fluidPage(
+  fluidRow( 
+    column(width = 4,   
+        wellPanel(
 inputPanel(
   radioButtons("x_totG", label="Select graph type: ", 
                choices = c("Pie Chart","Bar Chart"),
                selected="Bar Chart")
             )
+          )
+        ),
+column(width = 8, 
+             plotOutput("twoTypes")
+      )
+    )
+  )
 
-
-renderPlot({
+#output of the selected chart type
+output$twoTypes <- renderPlot({
  if(input$x_totG == "Bar Chart")
   {
     totPlot <- ggplot(mostPopSent, aes(x=reorder(sentiment,-number), y = number, fill = sentiment)) +
@@ -498,7 +618,6 @@ renderPlot({
   }
   
   
-#need to adjust legend to be in ascending order  
   
   if(input$x_totG == "Pie Chart")
   {
@@ -513,7 +632,11 @@ totPlot
 })
   
 ```
+<br>
+The most common sentiments surrounding the Coronavirus on the Twittersphere are negative, positive, and fear. The misinterpretation of the word "share" as mentioned in the earlier plot may inflate the word count associated with more positive sentiments. Although the most frequent sentiment was overwhelmingly negative, positive, trust, and anticipation were among the top five most prevalent sentiments on the Twittersphere. 
 
+
+<br><br>
 
 
 
