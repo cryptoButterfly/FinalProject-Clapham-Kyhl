@@ -38,6 +38,7 @@ library(RColorBrewer)
 library(viridis)
 library(knitr)
 library(DT)
+library(maps)
 ```
 
 ## {.tabset}
