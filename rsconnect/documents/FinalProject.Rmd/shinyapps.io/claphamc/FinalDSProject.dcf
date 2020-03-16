@@ -1,0 +1,12 @@
+name: FinalDSProject
+title: FinalDSProject
+username:
+account: claphamc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1955563
+bundleId: 2887727
+url: https://claphamc.shinyapps.io/FinalDSProject/
+when: 1584389538.48134
+asMultiple: FALSE
+asStatic: FALSE
