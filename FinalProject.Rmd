@@ -142,43 +142,90 @@ wordsDF <- wordsDF %>%
   ungroup() 
 ```
 
-```{r, echo =FALSE}
+```{r, echo =FALSE,eval=FALSE}
 #Data wrangling of "nrc" sentiments data set
 #grabbing the words associated with each sentiment from the nrc sentiments package
 nrc_joy <- get_sentiments("nrc") %>% 
   filter(sentiment == "joy")
 
+write_csv(nrc_joy, "nrc_joy.csv")
+
 nrc_negative <- get_sentiments("nrc") %>% 
   filter(sentiment == "negative")
+
+write_csv(nrc_negative, "nrc_negative.csv")
 
 nrc_anger <- get_sentiments("nrc") %>% 
   filter(sentiment == "anger")
 
+write_csv(nrc_anger, "nrc_anger.csv")
+
 nrc_positive <- get_sentiments("nrc") %>% 
   filter(sentiment == "positive")
+
+write_csv(nrc_positive, "nrc_positive.csv")
 
 nrc_anticipation <- get_sentiments("nrc") %>% 
   filter(sentiment == "anticipation")
 
+write_csv(nrc_anticipation, "nrc_anticipation.csv")
+
 nrc_disgust <- get_sentiments("nrc") %>% 
   filter(sentiment == "disgust")
+
+write_csv(nrc_disgust, "nrc_disgust.csv")
 
 nrc_fear <- get_sentiments("nrc") %>% 
   filter(sentiment == "fear")
 
+write_csv(nrc_fear, "nrc_fear.csv")
+
 nrc_sadness <- get_sentiments("nrc") %>% 
   filter(sentiment == "sadness")
+
+write_csv(nrc_sadness, "nrc_sadness.csv")
 
 nrc_surprise <- get_sentiments("nrc") %>% 
   filter(sentiment == "surprise")
 
+write_csv(nrc_surprise, "nrc_surprise.csv")
+
 nrc_trust <- get_sentiments("nrc") %>% 
   filter(sentiment == "trust")
+
+write_csv(nrc_trust, "nrc_trust.csv")
+
+nrc_sentiments <- get_sentiments("nrc")
+
+write_csv(nrc_sentiments, "nrc_sentiments.csv")
+```
+```{r}
+#read in csv files
+nrc_joy <- read.csv("nrc_joy.csv")
+
+nrc_negative <- read.csv("nrc_negative.csv")
+
+nrc_anger <- read.csv("nrc_anger.csv")
+
+nrc_positive <- read.csv("nrc_positive.csv")
+
+nrc_anticipation <- read.csv("nrc_anticipation.csv")
+
+nrc_disgust <- read.csv("nrc_disgust.csv")
+
+nrc_fear <- read.csv("nrc_fear.csv")
+
+nrc_sadness <- read.csv("nrc_sadness.csv")
+
+nrc_surprise <- read.csv("nrc_surprise.csv")
+
+nrc_trust <- read.csv("nrc_trust.csv")
+
+nrc_sentiments <- read.csv("nrc_sentiments.csv")
 ```
 
 ```{r,echo=FALSE}
 #bringing the top 5 words from each sentiment that matched to the words collected from the twitter data
-nrc_sentiments <- get_sentiments("nrc")
 
 #this code figures out what are the most common coded words for the nrc sentiment data set
 WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
