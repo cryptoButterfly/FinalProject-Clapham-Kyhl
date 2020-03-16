@@ -12,13 +12,37 @@ The link to our website goes here:
 <ul>
 List of file names in repo include:
 
-<li>FinalProject.Rmd (the primary program, everything is connected through this main program, grade this one!)</li>
+<li>FinalProject.Rmd 
 
-<li>time_series_19-covid-Confirmed.csv (data for the world map and bar graphs) </li>
-<li>time_series_19-covid-Deaths.csv (data for the world map and bar graphs)</li>
-<li>time_series_19-covid-Recovered.csv (data for the world map and bar graphs)</li>
-<li>ncov.csv (this is the twitter data)</li>
-<li>coronavirus.jpg (this is the image on our homepage)</li>
+*FinalProject.Rmd is the primary program that we were working from. Everything is connected through this main program.*
+
+</li>
+
+<li>time_series_19-covid-Confirmed.csv 
+
+*This data set the Coronavirus Case data, which is used to process the outbreaks and display them in the bar charts and world map. These are the total confirmed cases of Coronavirus around the world from January 22, 2020 to March 7, 2020.*
+</li>
+
+<li>time_series_19-covid-Deaths.csv 
+*This data set the Coronavirus Case data, which is used to process the outbreaks and display them in the bar charts and world map. These are the total fatal cases of Coronavirus around the world from January 22, 2020 to March 7, 2020.* 
+      
+</li>
+<li>time_series_19-covid-Recovered.csv 
+
+*This data set the Coronavirus Case data, which is used to process the outbreaks and display them in the bar charts and world map. These are the total recovered cases of Coronavirus around the world from January 22, 2020 to March 7, 2020.*
+
+</li>
+<li>
+
+ncov.csv 
+*This data set gathered tweets that used hashtags relating to Coronavirus for a particular day.*
+
+</li>
+<li>coronavirus.jpg 
+*This is the image on the front page of our website.*
+
+
+</li>
 <li>FinalProject.nb.html</li>
 <li>FinalProjectDataScience.Rproj</li>
 <li>FinalProjectDS.Rproj</li>
