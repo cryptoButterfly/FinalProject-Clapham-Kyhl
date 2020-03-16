@@ -5,6 +5,8 @@ output:
   html_document:
     fig_height: 3
     fig_width: 6
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -295,6 +297,8 @@ mostPopSent <- WordsMatch %>%
   group_by(sentiment) %>%
   summarize(number = sum(count))
 
+mostPopSent$sentiment <- factor(mostPopSent$sentiment, levels = c("negative", "positive", "fear", "trust", "anticipation", "anger", "sadness", "disgust", "joy", "surprise"))
+
 
 
 inputPanel(
@@ -324,7 +328,7 @@ renderPlot({
     totPlot <- ggplot(mostPopSent, aes(x="", y = number, fill = sentiment)) +
       geom_bar(stat="identity", width=1, color = "white")+
       coord_polar("y", start =0) +
-      labs(title = "Most Common Sentiments on the Twittersphere") +
+      labs(title = "Most Common Sentiments on the Twittersphere", fill="Sentiments (Listed in Decreasing Prevalency)") +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))+
       theme(plot.title = element_text(hjust = 0.5)) 
   }

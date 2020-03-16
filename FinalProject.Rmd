@@ -5,6 +5,8 @@ output:
   html_document:
     fig_height: 3
     fig_width: 6
+    toc: true
+    toc_float: true
 ---
 
 <style type="text/css">
@@ -17,6 +19,12 @@ h1.title {
 }
 </style>
 
+<style>
+
+body {
+font-family: "Times New Roman"; 
+}
+</style>
 ```{r setup,message=FALSE,echo=FALSE}
 library(readr)
 library(tidyverse)
@@ -24,6 +32,10 @@ library(dplyr)
 library(stringr)
 library(lubridate)
 library(shiny)
+library(twitteR)
+library(tidytext)
+library(textdata)
+library(gplots)
 ```
 <br><br><br><br>
 
@@ -191,5 +203,320 @@ output$worldPlot <- renderPlot({
 ```
 
 ## Public Response: an Analysis of Corona Virus Tweets over a Day
+
+```{r, echo = FALSE, message = FALSE, include=FALSE}
+#don't have time component ready, so bring in other elements?
+
+# in write up, mention how we only chose english tweets
+tweets <- read_csv("ncov.csv")
+tweets%>%
+  filter(lang=="en") %>%
+  select(text,favorite_count,is_retweet,retweet_count,stripped_text,created_at)
+
+tweets$stripped_text <- str_to_lower(tweets$stripped_text)
+tweetText <- tweets$stripped_text
+
+tweetTextList <- c((str_split(tweetText,"\\.|\\'|\\ |\\!|\\,|\\#|\\@|\\(|\\)|\\?|\\:"))) #came from dictionary homework, period, or, etc. to separate words
+
+tweetTextList2 <- unlist(tweetTextList)
+wordsDF <- as.data.frame(tweetTextList2, stringsAsFactors=FALSE)
+
+
+
+names(wordsDF) <- "word"
+wordsDF <- wordsDF %>%
+  group_by(word) %>%
+  summarize(count = n()) %>%
+  ungroup() 
+
+  
+  
+```
+
+
+
+
+```{r, echo =FALSE}
+
+
+#grabbing the words associated with each sentiment from the nrc sentiments package
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+nrc_negative <- get_sentiments("nrc") %>% 
+  filter(sentiment == "negative")
+
+nrc_anger <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anger")
+
+nrc_positive <- get_sentiments("nrc") %>% 
+  filter(sentiment == "positive")
+
+nrc_anticipation <- get_sentiments("nrc") %>% 
+  filter(sentiment == "anticipation")
+
+nrc_disgust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "disgust")
+
+nrc_fear <- get_sentiments("nrc") %>% 
+  filter(sentiment == "fear")
+
+nrc_sadness <- get_sentiments("nrc") %>% 
+  filter(sentiment == "sadness")
+
+nrc_surprise <- get_sentiments("nrc") %>% 
+  filter(sentiment == "surprise")
+
+nrc_trust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "trust")
+
+#matching them to the words from the tweets data frame
+```
+
+```{r,echo=FALSE}
+#bringing the top 5 words from each sentiment that matched to the words collected from the twitter data
+nrc_sentiments <- get_sentiments("nrc")
+
+#this code figures out what are the most common coded words for the nrc sentiment data set
+WordsMatch <- left_join(wordsDF, nrc_sentiments, by = "word") %>%
+  drop_na(sentiment)
+
+#this grabs the top 10 most used words for each sentiment
+joyWordsMatch <- WordsMatch %>%
+  filter(sentiment == "joy") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+negativeWordsMatch <- WordsMatch %>%
+  filter(sentiment == "negative") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+angerWordsMatch <- WordsMatch %>%
+    filter(sentiment == "anger") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+positiveWordsMatch <- WordsMatch %>%
+  filter(sentiment == "positive") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+anticipationWordsMatch <- WordsMatch %>%
+   filter(sentiment == "anticipation") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+disgustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "disgust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+fearWordsMatch <- WordsMatch %>%
+  filter(sentiment == "fear") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+sadnessWordsMatch <- WordsMatch %>%
+  filter(sentiment == "sadness") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+surpriseWordsMatch <- WordsMatch %>%
+  filter(sentiment == "surprise") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+trustWordsMatch <- WordsMatch %>%
+  filter(sentiment == "trust") %>%
+  arrange(desc(count)) %>%
+  slice(1:10)
+
+```
+
+```{r,echo=FALSE}
+#here is the shiny part, produces a bar graph where the user can choose which sentiment's top 10 words are
+
+inputPanel(
+  selectInput("x_sent", label = "Select Sentiment:", 
+             choices = c("joy", "negative", "anger", "positive", "anticipation", "disgust", "fear", "sadness", "surprise", "trust"),
+             selected = "fear")
+)
+ 
+renderPlot ({
+  if(input$x_sent == "joy")
+  {
+    sentPlot <- ggplot(joyWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Joy") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  
+  if(input$x_sent == "negative")
+  {
+    sentPlot <- ggplot(negativeWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words with Negative Connotation") +
+      geom_col() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "anger")
+  {
+    sentPlot <- ggplot(angerWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Anger") + 
+      geom_col() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+
+  if(input$x_sent == "positive")
+  {
+    sentPlot <- ggplot(positiveWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words with Positive Connotation") + 
+      geom_col() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "anticipation")
+  {
+    sentPlot <- ggplot(anticipationWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Anticipation") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+ 
+  
+  if(input$x_sent == "disgust")
+  {
+    sentPlot <- ggplot(disgustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Disgust") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+ 
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+
+  
+  if(input$x_sent == "fear")
+  {
+    sentPlot <- ggplot(fearWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Fear") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "sadness")
+  {
+    sentPlot <- ggplot(sadnessWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Sadness") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  if(input$x_sent == "surprise")
+  {
+    sentPlot <- ggplot(surpriseWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Surprise") +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+ 
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  
+  if(input$x_sent == "trust")
+  {
+    sentPlot <- ggplot(trustWordsMatch, aes(x=reorder(word,-count), y = count, fill= word)) +
+      labs(title = "Words Associated with Trust") + 
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  sentPlot
+})
+```
+
+
+```{r, echo=FALSE}
+
+#this gives the top 10 most popular sentiment
+mostPopSent <- WordsMatch %>% 
+  group_by(sentiment) %>%
+  summarize(number = sum(count))
+
+#this reorders in decreasing prevalency
+mostPopSent$sentiment <- factor(mostPopSent$sentiment, levels = c("negative", "positive", "fear", "trust", "anticipation", "anger", "sadness", "disgust", "joy", "surprise"))
+
+
+
+#this is the shiny part to give the user the choice to view the top 10 most popular sentiments in bar graph or pie chart format
+
+inputPanel(
+  radioButtons("x_totG", label="Select graph type: ", 
+               choices = c("Pie Chart","Bar Chart"),
+               selected="Bar Chart")
+            )
+
+
+renderPlot({
+ if(input$x_totG == "Bar Chart")
+  {
+    totPlot <- ggplot(mostPopSent, aes(x=reorder(sentiment,-number), y = number, fill = sentiment)) +
+      geom_col() +
+      labs(title = "Most Common Sentiments on the Twittersphere") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(legend.position = "none")+
+      labs(x=NULL, y="Count") +
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+  
+  
+#need to adjust legend to be in ascending order  
+  
+  if(input$x_totG == "Pie Chart")
+  {
+    totPlot <- ggplot(mostPopSent, aes(x="", y = number, fill = sentiment)) +
+      geom_bar(stat="identity", width=1, color = "white")+
+      coord_polar("y", start =0) +
+      labs(title = "Most Common Sentiments on the Twittersphere",fill="Sentiments (Listed in Decreasing Prevalency)") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+      theme(plot.title = element_text(hjust = 0.5)) 
+  }
+totPlot
+})
+  
+```
+
+
+
+
+
 
 
