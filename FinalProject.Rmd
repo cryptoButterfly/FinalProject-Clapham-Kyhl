@@ -38,6 +38,7 @@ library(RColorBrewer)
 library(viridis)
 library(knitr)
 library(DT)
+source("helpers.R")
 ```
 
 ## {.tabset}
@@ -640,6 +641,9 @@ The most common sentiments surrounding the Coronavirus on the Twittersphere are 
 
 
 
+```{r, echo=FALSE}
+shinyApp(ui, server)
+```
 
 
 
